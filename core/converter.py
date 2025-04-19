@@ -72,7 +72,12 @@ def populate_images(images_path: Path, meta_path: Path, train_sample_size: int, 
 
 
 def copy_images(images_path: Path, paths: list[str], dst_folder: str):
-    for path in paths:
-        src = images_path / (path + ".jpg")
-        dst = base_path / dst_folder
-        shutil.copy(src, dst)
+    map_file = base_path / "dataset" / "paths.txt"
+
+    with open(map_file, "a") as f:
+        for path in paths:
+            src = images_path / (path + ".jpg")
+            dst = base_path / dst_folder
+            shutil.copy(src, dst)
+
+            f.write(f"{src} -> {dst / (path.split("/")[1] + ".jpg")}\n")

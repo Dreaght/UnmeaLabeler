@@ -6,9 +6,13 @@ import cv2
 import numpy as np
 from pathlib import Path
 
+base_path = Path(__file__).parent.parent
+
 # Settings
 images_dir = Path("dataset/images/train")
 labels_dir = Path("dataset/labels/train")
+
+path_map = {}
 
 class_names = []
 current_index = 0
@@ -25,6 +29,8 @@ class LabelingWidget(QWidget):
 
         self.image_label = QLabel(self)
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+
 
         self.bbox_start = None
         self.bbox_end = None
@@ -130,7 +136,10 @@ class LabelingWidget(QWidget):
         metrics = painter.fontMetrics()
 
         text_lines = []
-        line = ""
+
+        print(path_map)
+
+        line = str(path_map[str(base_path / image_paths[current_index])])
         max_width = self.width() - 10
         for i, name in enumerate(class_names):
             entry = f"[{i}] {name}" if i != class_id else f"→[{i}] {name}←"
@@ -256,10 +265,24 @@ def load_class_names():
 def load_image_paths(im_dir: Path = images_dir):
     return sorted([p for p in im_dir.iterdir() if p.suffix == ".jpg"])
 
+def load_path_mapping():
+    global path_map
+
+    path_map = {}
+    map_file = Path("dataset/paths.txt")
+    if map_file.exists():
+        with open(map_file, "r") as f:
+            for line in f:
+                if "->" in line:
+                    src, dst = map(str.strip, line.strip().split("->"))
+                    path_map[dst] = src
+
 def run_labeling():
     global image_paths
     load_class_names()
     image_paths = load_image_paths()
+
+    load_path_mapping()
 
     app = QApplication(sys.argv)
     widget = LabelingWidget()
