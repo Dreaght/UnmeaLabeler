@@ -2,23 +2,22 @@ import shutil
 import random
 from pathlib import Path
 
+from core.util.image_names_normalizer import normalize_all
 
 base_path = Path().resolve()
 
 
-def reinitialize(dataset_path: Path, train_sample_size: int = 15, val_sample_size: int = 5, seed: int = 42):
-    purge()
-    initialize(dataset_path, train_sample_size, val_sample_size, seed)
+def initialize(dataset_path: Path, train_sample_size: int = 15, val_sample_size: int = 5, seed: int = 42, should_purge=True):
+    if should_purge:
+        purge()
 
-
-def initialize(dataset_path: Path, train_sample_size: int = 15, val_sample_size: int = 5, seed: int = 42):
     images_path = dataset_path / 'images'
     meta_path = dataset_path / 'meta'
 
     generate_dataset_structure()
     generate_data_yaml(get_classes_id(meta_path))
     populate_images(images_path, meta_path, train_sample_size, val_sample_size, seed)
-    normalize_all()
+    normalize_all(base_path)
 
 
 def purge():
@@ -71,7 +70,6 @@ def populate_images(images_path: Path, meta_path: Path, train_sample_size: int, 
     copy_images(images_path, sampled_train, "dataset/images/train")
     copy_images(images_path, sampled_val, "dataset/images/val")
 
-
 def copy_images(images_path: Path, paths: list[str], dst_folder: str):
     map_file = base_path / "dataset" / "paths.txt"
 
@@ -82,20 +80,3 @@ def copy_images(images_path: Path, paths: list[str], dst_folder: str):
             shutil.copy(src, dst)
 
             f.write(f"{src} -> {dst / (path.split("/")[1] + ".jpg")}\n")
-
-def normalize_all():
-    folders = [
-        base_path / "dataset/images/train",
-        base_path / "dataset/images/val",
-        base_path / "dataset/labels/train",
-        base_path / "dataset/labels/val",
-    ]
-
-    for folder in folders:
-        for file in folder.iterdir():
-            if file.is_file():
-                parts = file.name.split("-", 1)
-                if len(parts) == 2:
-                    new_name = parts[1]
-                    new_path = folder / new_name
-                    file.rename(new_path)

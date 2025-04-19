@@ -5,6 +5,8 @@ A tool to convert the Food-101 dataset into a YOLO-compatible structure for obje
 ## Arguments
 `-d` `--dataset`: Food-101 dataset path
 
+`-m` `--label-studio-path`: Migrate from label studio (Specify a path)
+
 `-t` `--train-sample-size`: Training sample size
 
 `-v` `--val-sample-size`: Validation sample size
