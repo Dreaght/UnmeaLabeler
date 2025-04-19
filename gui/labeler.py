@@ -141,7 +141,7 @@ class LabelingWidget(QWidget):
 
         text_lines = []
 
-        line = str(path_map[str(base_path / image_paths[current_index])]) # e.x: /home/dreaght/Documents/food-101/images/ceviche/1648055.jpg'
+        line = str(path_map.get(str(base_path / image_paths[current_index]), "")) # e.x: /home/dreaght/Documents/food-101/images/ceviche/1648055.jpg'
         max_width = self.width() - 10
         for i, name in enumerate(class_names):
             entry = f"[{i}] {name}" if i != class_id else f"→[{i}] {name}←"

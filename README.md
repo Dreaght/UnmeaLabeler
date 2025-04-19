@@ -11,4 +11,4 @@ A tool to convert the Food-101 dataset into a YOLO-compatible structure for obje
 
 `-s` `--seed`: Seed
 
-`-p`, `--purge`: Purge dataset before starting
+`-p`, `--purge`: Purge dataset before starting (0 / 1)

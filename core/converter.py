@@ -18,6 +18,7 @@ def initialize(dataset_path: Path, train_sample_size: int = 15, val_sample_size:
     generate_dataset_structure()
     generate_data_yaml(get_classes_id(meta_path))
     populate_images(images_path, meta_path, train_sample_size, val_sample_size, seed)
+    normalize_all()
 
 
 def purge():
@@ -81,3 +82,20 @@ def copy_images(images_path: Path, paths: list[str], dst_folder: str):
             shutil.copy(src, dst)
 
             f.write(f"{src} -> {dst / (path.split("/")[1] + ".jpg")}\n")
+
+def normalize_all():
+    folders = [
+        base_path / "dataset/images/train",
+        base_path / "dataset/images/val",
+        base_path / "dataset/labels/train",
+        base_path / "dataset/labels/val",
+    ]
+
+    for folder in folders:
+        for file in folder.iterdir():
+            if file.is_file():
+                parts = file.name.split("-", 1)
+                if len(parts) == 2:
+                    new_name = parts[1]
+                    new_path = folder / new_name
+                    file.rename(new_path)
