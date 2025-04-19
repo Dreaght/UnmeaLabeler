@@ -265,7 +265,11 @@ def load_class_names():
                 class_names.append(name)
 
 def load_image_paths(im_dir: Path = images_dir):
-    return sorted([p for p in im_dir.iterdir() if p.suffix == ".jpg"])
+    related_labels_dir = Path(str(im_dir).replace("images", "labels"))
+    return sorted([
+        p for p in im_dir.rglob("*.jpg")
+        if not (related_labels_dir / (p.stem + ".txt")).exists()
+    ])
 
 def load_path_mapping():
     global path_map

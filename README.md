@@ -10,3 +10,5 @@ A tool to convert the Food-101 dataset into a YOLO-compatible structure for obje
 `-v` `--val-sample-size`: Validation sample size
 
 `-s` `--seed`: Seed
+
+`-p`, `--purge`: Purge dataset before starting
