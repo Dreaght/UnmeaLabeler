@@ -42,7 +42,7 @@ class LabelingWidget(QWidget):
         self.load_image()
 
     def load_image(self):
-        global current_index, image_paths, labels_dir, boxes
+        global current_index, image_paths, labels_dir, boxes, class_id
 
         while current_index < len(image_paths):
             img_path = image_paths[current_index]
@@ -72,6 +72,10 @@ class LabelingWidget(QWidget):
             print("No images found!")
             return
         img_path = image_paths[current_index]
+
+        line = str(path_map.get(str(base_path / img_path), str(img_path)))  # fallback to img_path if not in path_map
+        class_id = get_class_id_from_path(line)
+
         img = cv2.imread(str(img_path))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.current_image = img
@@ -137,9 +141,7 @@ class LabelingWidget(QWidget):
 
         text_lines = []
 
-        print(path_map)
-
-        line = str(path_map[str(base_path / image_paths[current_index])])
+        line = str(path_map[str(base_path / image_paths[current_index])]) # e.x: /home/dreaght/Documents/food-101/images/ceviche/1648055.jpg'
         max_width = self.width() - 10
         for i, name in enumerate(class_names):
             entry = f"[{i}] {name}" if i != class_id else f"→[{i}] {name}←"
@@ -276,6 +278,17 @@ def load_path_mapping():
                 if "->" in line:
                     src, dst = map(str.strip, line.strip().split("->"))
                     path_map[dst] = src
+
+def get_class_id_from_path(path: str) -> int:
+    """
+    Extracts the dish name from the path and returns the corresponding class_id.
+    Assumes that dish name is the parent directory of the image file.
+    """
+    for name in class_names:
+        if f"/{name}/" in path or f"\\{name}\\" in path:  # Handle both Unix and Windows paths
+            return class_names.index(name)
+    return 0  # Default class if not found
+
 
 def run_labeling():
     global image_paths
