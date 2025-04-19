@@ -6,9 +6,9 @@ from pathlib import Path
 base_path = Path().resolve()
 
 
-def reinitialize(dataset_path: Path):
+def reinitialize(dataset_path: Path, train_sample_size: int = 15, val_sample_size: int = 5, seed: int = 42):
     purge()
-    initialize(dataset_path)
+    initialize(dataset_path, train_sample_size, val_sample_size, seed)
 
 
 def initialize(dataset_path: Path, train_sample_size: int = 15, val_sample_size: int = 5, seed: int = 42):
