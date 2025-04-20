@@ -30,8 +30,6 @@ class LabelingWidget(QWidget):
         self.image_label = QLabel(self)
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-
-
         self.bbox_start = None
         self.bbox_end = None
         self.drawing = False
@@ -44,49 +42,71 @@ class LabelingWidget(QWidget):
     def load_image(self):
         global current_index, image_paths, labels_dir, boxes, class_id
 
-        while current_index < len(image_paths):
-            img_path = image_paths[current_index]
-            if img_path.exists():
-                break
-            else:
-                current_index += 1
+        # Skip non-existent files
+        while current_index < len(image_paths) and not image_paths[current_index].exists():
+            current_index += 1
 
+        # Check if we've reached the end of the current split
         if current_index >= len(image_paths):
             if "train" in str(labels_dir):
-                # Fallback to val
+                print("Switching to validation set...")
                 image_paths[:] = load_image_paths(Path("dataset/images/val"))
                 labels_dir = Path("dataset/labels/val")
                 current_index = 0
                 class_id = 0
                 boxes.clear()
-                if not image_paths:
-                    print("No images in val set. Exiting.")
-                    QApplication.quit()
-                    return
             else:
-                print("All val images processed. Exiting.")
+                print("All validation images processed. Exiting.")
                 QApplication.quit()
                 return
 
+        # If no images available even after switching
         if not image_paths:
-            print("No images found!")
+            print("No images found! Exiting.")
+            QApplication.quit()
             return
-        img_path = image_paths[current_index]
 
-        line = str(path_map.get(str(base_path / img_path), str(img_path)))  # fallback to img_path if not in path_map
+        img_path = image_paths[current_index]
+        current_index += 1  # Prepare for next call
+
+        # Try to remap path if available
+        line = str(path_map.get(str(base_path / img_path), str(img_path)))
         class_id = get_class_id_from_path(line)
 
+        # Load and convert image
         img = cv2.imread(str(img_path))
+        if img is None:
+            print(f"Failed to load image: {img_path}")
+            self.load_image()  # Skip to next
+            return
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.current_image = img
-        boxes.clear()
 
         h, w, _ = img.shape
+        boxes.clear()
 
-        # Automatically scale image up to fit the screen (2x or max)
+        # Load bounding boxes
+        label_path = labels_dir / f"{img_path.stem}.txt"
+        if label_path.exists():
+            with open(label_path) as f:
+                for line in f:
+                    parts = line.strip().split()
+                    if len(parts) != 5:
+                        continue
+                    cls_id, cx, cy, bw, bh = map(float, parts)
+                    cls_id = int(cls_id)
+                    x1 = int((cx - bw / 2) * w)
+                    y1 = int((cy - bh / 2) * h)
+                    x2 = int((cx + bw / 2) * w)
+                    y2 = int((cy + bh / 2) * h)
+
+                    print(x1, y1, x2, y2, " | ",  h, w)
+
+                    boxes.append((x1, y1, x2, y2, cls_id))
+
+        # Scale image to fit screen
         screen_rect = QApplication.primaryScreen().availableGeometry()
-        max_width = int(screen_rect.width() * 0.9)
-        max_height = int(screen_rect.height() * 0.9)
+        max_width, max_height = int(screen_rect.width() * 0.9), int(screen_rect.height() * 0.9)
 
         self.scale = min(max_width / w, max_height / h)
         new_w, new_h = int(w * self.scale), int(h * self.scale)
@@ -94,7 +114,6 @@ class LabelingWidget(QWidget):
 
         self.setFixedSize(new_w, new_h)
         self.image_label.setFixedSize(new_w, new_h)
-
         self.update()
 
     def scaled_to_original(self, point: QPoint) -> QPoint:
@@ -167,7 +186,7 @@ class LabelingWidget(QWidget):
 
         # Image counter in top-left corner
         painter.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        counter_text = f"Image {current_index + 1}/{len(image_paths)}"
+        counter_text = f"Image {current_index}/{len(image_paths)}"
         counter_rect = QRect(10, 10, 200, 30)
         painter.setBrush(QColor(0, 0, 0, 100))
         painter.setPen(Qt.PenStyle.NoPen)
@@ -181,6 +200,8 @@ class LabelingWidget(QWidget):
             self.drawing = True
 
     def mouseMoveEvent(self, event):
+        print(event.pos())
+
         if self.drawing:
             pos = event.pos()
 
@@ -264,12 +285,15 @@ def load_class_names():
                 name = line.split(":")[1].strip()
                 class_names.append(name)
 
-def load_image_paths(im_dir: Path = images_dir):
+def load_image_paths(im_dir: Path = images_dir, review: bool = False):
     related_labels_dir = Path(str(im_dir).replace("images", "labels"))
-    return sorted([
-        p for p in im_dir.rglob("*.jpg")
-        if not (related_labels_dir / (p.stem + ".txt")).exists()
-    ])
+    if review:
+        return sorted([p for p in im_dir.iterdir() if p.suffix == ".jpg"])
+    else:
+        return sorted([
+            p for p in im_dir.rglob("*.jpg")
+            if not (related_labels_dir / (p.stem + ".txt")).exists()
+        ])
 
 def load_path_mapping():
     global path_map
@@ -294,10 +318,10 @@ def get_class_id_from_path(path: str) -> int:
     return 0  # Default class if not found
 
 
-def run_labeling():
+def run_labeling(review: bool = False):
     global image_paths
     load_class_names()
-    image_paths = load_image_paths()
+    image_paths = load_image_paths(review=review)
 
     load_path_mapping()
 

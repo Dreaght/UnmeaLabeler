@@ -8,7 +8,7 @@ base_path = Path().resolve()
 
 
 def convert_from_label_studio(datasets_folder: Path):
-    datasets = list(datasets_folder.glob("project*.zip"))
+    datasets = list(datasets_folder.glob("*.zip"))
 
     extract_dir = base_path / "dataset/extracted"
     extract_dir.mkdir(exist_ok=True)

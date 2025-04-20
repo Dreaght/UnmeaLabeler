@@ -18,7 +18,7 @@ def main():
     if args.label_studio_path:
         convert_from_label_studio(Path(args.label_studio_path))
 
-    run_labeling()
+    run_labeling(args.review)
 
 
 if __name__ == "__main__":
@@ -30,6 +30,7 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--val-sample-size', type=int, default=5, help='Validation sample size')
     parser.add_argument('-s', '--seed', type=int, default=42, help='Seed')
     parser.add_argument('-p', '--purge', type=int, default=1, help='Purge dataset before starting (0 / 1)')
+    parser.add_argument('-r', '--review', type=int, default=1, help='Review all the dataset starting (even labeled) (0 / 1)')
     args = parser.parse_args()
 
     main()
